@@ -6,14 +6,11 @@ on:
       php_version:
         required: true
         default: "8.1"
-        type: string
       node_version:
         required: true
         default: "20"
-        type: string
       wordpress_path:
         required: true
-        type: string
     secrets:
       ssh_root_live:
         required: true
@@ -25,16 +22,12 @@ on:
         required: true
       theme_dir:
         required: true
-        type: string
       ssh_host:
         required: true
-        type: string
       ssh_user:
         required: true
-        type: string
       ssh_private_key:
         required: true
-        type: string
 
 
 jobs:
