@@ -5,12 +5,15 @@ on:
     inputs:
       php_version:
         required: true
+        type: string
         default: "8.1"
       node_version:
         required: true
+        type: string
         default: "20"
       wordpress_path:
         required: true
+        type: string
     secrets:
       ssh_root_live:
         required: true
