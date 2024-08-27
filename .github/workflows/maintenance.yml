@@ -88,10 +88,10 @@ jobs:
             exit 1
           fi
 
-      - name: 🌍 Verify .rsync-ignore file
+      - name: 🌍 Verify .rsync-include file
         run: |
-          if [ ! -f ".rsync-ignore" ]; then
-            echo ".rsync-ignore file does not exist."
+          if [ ! -f ".rsync-include" ]; then
+            echo ".rsync-include file does not exist."
             exit 1
           fi
 
@@ -138,7 +138,7 @@ jobs:
 
       - name: 💎 Checking rsync execution before upload
         run: |
-          rsync_output=$(rsync -avz -n --no-times --delete --exclude-from='.rsync-ignore' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
+          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
           rsync_exit_code=$?
 
           echo "$rsync_output"
@@ -150,7 +150,7 @@ jobs:
 
       - name: 🌊 Upload files with rsync
         run: |
-          rsync -avz --no-times --delete --exclude-from='.rsync-ignore' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
+          rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
 
       - name: ⚙️ Activate/Deactivate Plugins
         run: |
