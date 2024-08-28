@@ -152,6 +152,12 @@ jobs:
         run: |
           rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
 
+      - name: 📦 Install jq if not installed
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} 'if ! command -v jq &> /dev/null; then sudo apt-get update && sudo apt-get install -y jq; fi'
+
+
       - name: ⚙️ Activate/Deactivate Plugins
         run: |
           ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
