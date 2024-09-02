@@ -155,28 +155,25 @@ jobs:
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
-          cd ${{ env.SSH_ROOT }}
-          set -x
-          if [ -f project-state.json ]; then
-              # Extract plugin names and statuses
-              PLUGIN_ENTRIES=$(grep -E '"name":|"status":' project-state.json | sed -E 's/.*"name": "(.*)",/\1/;s/.*"status": "(.*)"/\1/')
-          
-              # Convert the entries into a list
-              PLUGIN_LIST=$(echo "$PLUGIN_ENTRIES" | paste -d'\n' - -)
-            
-              # Loop through each plugin and its status
-              echo "$PLUGIN_LIST" | while read -r PLUGIN_NAME; do
-                  read -r PLUGIN_STATUS
-                  if [ "$PLUGIN_STATUS" = "active" ]; then
-                      wp plugin activate "$PLUGIN_NAME" --path="${{env.SSH_ROOT}}/${{inputs.wordpress_path}}"
-                  elif [ "$PLUGIN_STATUS" = "inactive" ]; then
-                      wp plugin deactivate "$PLUGIN_NAME" --path="${{env.SSH_ROOT}}/${{inputs.wordpress_path}}"
-                  fi
-              done
+          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
+          PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
+          if [ -f "$PROJECT_STATE_JSON" ]; then
+            for row in $(jq -r '.plugins[] | @base64' $PROJECT_STATE_JSON); do
+              _jq() {
+                echo ${row} | base64 --decode | jq -r ${1}
+              }
+              PLUGIN_NAME=$(_jq '.name')
+              PLUGIN_STATUS=$(_jq '.status')
+
+              if [ "$PLUGIN_STATUS" = "active" ]; then
+                wp plugin activate $PLUGIN_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+              elif [ "$PLUGIN_STATUS" = "inactive" ]; then
+                wp plugin deactivate $PLUGIN_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+              fi
+            done
           else
-              echo "project-state.json file not found."
-              exit 1
+            echo "project-state.json file not found."
+            exit 1
           fi
           EOF
 
