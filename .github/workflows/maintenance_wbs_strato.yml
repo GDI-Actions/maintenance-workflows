@@ -157,6 +157,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
           cd ${{ env.SSH_ROOT }}
+          set -x
           if [ -f project-state.json ]; then
             # Extract plugin names and statuses
             PLUGIN_ENTRIES=$(grep -oP '"name": "\K[^"]+|(?<=status": ")(active|inactive)' project-state.json)
@@ -182,13 +183,17 @@ jobs:
       - name: 🎨 Activate Theme
         continue-on-error: true
         run: |
-          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
-          PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
-          THEME_NAME=$(jq -r '.["active-theme"]' $PROJECT_STATE_JSON 2>/dev/null || echo "")
-          if [ -n "$THEME_NAME" ]; then
-            wp theme activate $THEME_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
+          cd ${{ env.SSH_ROOT }}
+          if [ -f project-state.json ]; then
+            THEME_NAME=$(grep -oP '"active-theme"\s*:\s*"\K[^"]+' project-state.json || echo "")
+            if [ -n "$THEME_NAME" ]; then
+              wp theme activate $THEME_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+            else
+              echo "No active theme specified."
+            fi
           else
-            echo "No active theme specified or project-state.json not found."
+            echo "project-state.json not found."
           fi
           EOF
 
