@@ -169,9 +169,9 @@ jobs:
               echo "$PLUGIN_LIST" | while read -r PLUGIN_NAME; do
                   read -r PLUGIN_STATUS
                   if [ "$PLUGIN_STATUS" = "active" ]; then
-                      wp plugin activate "$PLUGIN_NAME" --path="${env.SSH_ROOT}/${inputs.wordpress_path}"
+                      wp plugin activate "$PLUGIN_NAME" --path="${{env.SSH_ROOT}}/${{inputs.wordpress_path}}"
                   elif [ "$PLUGIN_STATUS" = "inactive" ]; then
-                      wp plugin deactivate "$PLUGIN_NAME" --path="${env.SSH_ROOT}/${inputs.wordpress_path}"
+                      wp plugin deactivate "$PLUGIN_NAME" --path="${{env.SSH_ROOT}}/${{inputs.wordpress_path}}"
                   fi
               done
           else
