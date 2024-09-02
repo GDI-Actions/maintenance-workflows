@@ -155,7 +155,7 @@ jobs:
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
         run: |
-          ssh -tt ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
           PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
           if [ -f "$PROJECT_STATE_JSON" ]; then
             # Extract plugin names and statuses
