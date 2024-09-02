@@ -156,10 +156,10 @@ jobs:
         continue-on-error: true
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
-          PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
-          if [ -f "$PROJECT_STATE_JSON" ]; then
+          cd ${{ env.SSH_ROOT }}
+          if [ -f project-state.json ]; then
             # Extract plugin names and statuses
-            PLUGIN_ENTRIES=$(grep -oP '"name": "\K[^"]+|(?<=status": ")(active|inactive)' $PROJECT_STATE_JSON)
+            PLUGIN_ENTRIES=$(grep -oP '"name": "\K[^"]+|(?<=status": ")(active|inactive)' project-state.json)
           
             # Convert the entries into a list
             PLUGIN_LIST=$(echo "$PLUGIN_ENTRIES" | paste -d'\n' - -)
