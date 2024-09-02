@@ -1,4 +1,4 @@
-name: ⛳ Deploy & Maintenance
+name: ⛳ Deploy & Maintenance Strato
 
 on:
   workflow_call:
@@ -155,7 +155,7 @@ jobs:
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
         run: |
-          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
+          ssh -t ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
           PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
           if [ -f "$PROJECT_STATE_JSON" ]; then
             # Extract plugin names and statuses
