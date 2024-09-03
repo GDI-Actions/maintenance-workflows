@@ -186,7 +186,7 @@ jobs:
             echo "project-state.json file not found."
             exit 1
           fi
-#          EOF
+          EOF
 
 #      - name: 🎨 Activate Theme
 #        continue-on-error: true
