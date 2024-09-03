@@ -158,6 +158,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
           cd ${{ env.SSH_ROOT }}
           mkdir test
+          EOF
 #          if [ -f project-state.json ]; then
 #            # Read the project-state.json file line by line
 #            while IFS= read -r line; do
