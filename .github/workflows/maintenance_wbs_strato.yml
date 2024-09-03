@@ -162,13 +162,16 @@ jobs:
           if [ -f "project-state.json" ]; then
             echo "project-state.json found, processing..."
       
-            # Extract plugin names and statuses with grep and sed
-            PLUGIN_ENTRIES=\$(grep -oP '"name":.*?[^\\]",|"status":.*?[^\\]"' project-state.json | sed -e 's/"name"://g' -e 's/"status"://g' -e 's/[", ]//g')
+            # Extract plugin names and statuses using grep and sed
+            PLUGIN_ENTRIES=\$(grep -oP '"name":\s*"\K[^"]+|(?<=status":\s*")\w+' project-state.json)
       
             PLUGIN_ARRAY=()
             while read -r line; do
               PLUGIN_ARRAY+=("\$line")
             done <<< "\$PLUGIN_ENTRIES"
+          
+            # Debug output to check the contents of the PLUGIN_ARRAY
+            echo "PLUGIN_ARRAY: \${PLUGIN_ARRAY[@]}"
           
             # Loop through the array and process plugins
             for ((i=0; i<\${#PLUGIN_ARRAY[@]}; i+=2)); do
@@ -190,7 +193,7 @@ jobs:
             exit 1
           fi
           EOF
-          echo "SSH Command finished"
+
 #      - name: 🎨 Activate Theme
 #        continue-on-error: true
 #        run: |
