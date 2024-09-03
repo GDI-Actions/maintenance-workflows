@@ -155,7 +155,8 @@ jobs:
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
         run: |
-          ssh -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" -tt << EOF
+          ssh -T -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
+          set -x
           cd ${{ env.SSH_ROOT }}
 
           if [ -f "project-state.json" ]; then
@@ -187,7 +188,7 @@ jobs:
             exit 1
           fi
           EOF
-
+          echo "SSH Command finished"
 #      - name: 🎨 Activate Theme
 #        continue-on-error: true
 #        run: |
