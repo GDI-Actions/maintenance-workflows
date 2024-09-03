@@ -185,10 +185,10 @@ jobs:
               if [ -n "\$PLUGIN_NAME" ] && [ -n "\$PLUGIN_STATUS" ]; then
                 if [ "\$PLUGIN_STATUS" = "active" ]; then
                   echo "Activating \$PLUGIN_NAME"
-                  ddev wp plugin activate "\$PLUGIN_NAME" || echo "Failed to activate \$PLUGIN_NAME"
+                  wp plugin activate "\$PLUGIN_NAME" || echo "Failed to activate \$PLUGIN_NAME"
                 elif [ "\$PLUGIN_STATUS" = "inactive" ]; then
                   echo "Deactivating \$PLUGIN_NAME"
-                  ddev wp plugin deactivate "\$PLUGIN_NAME" || echo "Failed to deactivate \$PLUGIN_NAME"
+                  wp plugin deactivate "\$PLUGIN_NAME" || echo "Failed to deactivate \$PLUGIN_NAME"
                 fi
               fi
             done
