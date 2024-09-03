@@ -104,30 +104,30 @@ jobs:
         with:
           php-version: ${{ inputs.php_version }}
 
-      - name: 🎲 Install composer dependency
-        run: composer install
-
-      - name: ⏳ Install theme composer dependency
-        run: composer install
-        working-directory: ${{ secrets.theme_dir }}
-
-      - name: 🎣 Install Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ inputs.node_version }}
-
-      - name: 🔧 Install npm dependencies
-        run: yarn install
-        working-directory: ${{ secrets.theme_dir }}
-
-      - name: 🏄 Build theme
-        run: yarn run build
-        working-directory: ${{ secrets.theme_dir }}
-
-      - name: 🔭 Install SSH and rsync
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ssh rsync
+#      - name: 🎲 Install composer dependency
+#        run: composer install
+#
+#      - name: ⏳ Install theme composer dependency
+#        run: composer install
+#        working-directory: ${{ secrets.theme_dir }}
+#
+#      - name: 🎣 Install Node.js
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: ${{ inputs.node_version }}
+#
+#      - name: 🔧 Install npm dependencies
+#        run: yarn install
+#        working-directory: ${{ secrets.theme_dir }}
+#
+#      - name: 🏄 Build theme
+#        run: yarn run build
+#        working-directory: ${{ secrets.theme_dir }}
+#
+#      - name: 🔭 Install SSH and rsync
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y ssh rsync
 
       - name: 👀 Set up SSH key
         run: |
@@ -136,70 +136,70 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
 
-      - name: 💎 Checking rsync execution before upload
-        run: |
-          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
-          rsync_exit_code=$?
+#      - name: 💎 Checking rsync execution before upload
+#        run: |
+#          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
+#          rsync_exit_code=$?
+#
+#          echo "$rsync_output"
+#
+#          if [ $rsync_exit_code -ne 0 ]; then
+#          echo "Error: Rsync encountered an error during the dry run."
+#          exit 1
+#          fi
 
-          echo "$rsync_output"
-
-          if [ $rsync_exit_code -ne 0 ]; then
-          echo "Error: Rsync encountered an error during the dry run."
-          exit 1
-          fi
-
-      - name: 🌊 Upload files with rsync
-        run: |
-          rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
+#      - name: 🌊 Upload files with rsync
+#        run: |
+#          rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
 
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
           cd ${{ env.SSH_ROOT }}
-          
-          if [ -f project-state.json ]; then
-            # Read the project-state.json file line by line
-            while IFS= read -r line; do
-              # Extract plugin name
-              if echo "\$line" | grep -q '"name"'; then
-                PLUGIN_NAME=\$(echo "\$line" | awk -F'"' '{print \$4}')
-              fi
-              
-              # Extract plugin status
-              if echo "\$line" | grep -q '"status"'; then
-                PLUGIN_STATUS=\$(echo "\$line" | awk -F'"' '{print \$4}')
-          
-                # Activate or deactivate plugin based on status
-                if [ "\$PLUGIN_STATUS" = "active" ]; then
-                  wp plugin activate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
-                elif [ "\$PLUGIN_STATUS" = "inactive" ]; then
-                  wp plugin deactivate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
-                fi
-              fi
-            done < project-state.json
-          else
-            echo "project-state.json file not found."
-            exit 1
-          fi
+          mkdir test
+#          if [ -f project-state.json ]; then
+#            # Read the project-state.json file line by line
+#            while IFS= read -r line; do
+#              # Extract plugin name
+#              if echo "\$line" | grep -q '"name"'; then
+#                PLUGIN_NAME=\$(echo "\$line" | awk -F'"' '{print \$4}')
+#              fi
+#
+#              # Extract plugin status
+#              if echo "\$line" | grep -q '"status"'; then
+#                PLUGIN_STATUS=\$(echo "\$line" | awk -F'"' '{print \$4}')
+#
+#                # Activate or deactivate plugin based on status
+#                if [ "\$PLUGIN_STATUS" = "active" ]; then
+#                  wp plugin activate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
+#                elif [ "\$PLUGIN_STATUS" = "inactive" ]; then
+#                  wp plugin deactivate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
+#                fi
+#              fi
+#            done < project-state.json
+#          else
+#            echo "project-state.json file not found."
+#            exit 1
+#          fi
           EOF
 
-      - name: 🎨 Activate Theme
-        continue-on-error: true
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
-          cd ${{ env.SSH_ROOT }}
-          if [ -f project-state.json ]; then
-            THEME_NAME=$(grep -oP '"active-theme"\s*:\s*"\K[^"]+' project-state.json || echo "")
-            if [ -n "$THEME_NAME" ]; then
-              wp theme activate $THEME_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
-            else
-              echo "No active theme specified."
-            fi
-          else
-            echo "project-state.json not found."
-          fi
-          EOF
+#      - name: 🎨 Activate Theme
+#        continue-on-error: true
+#        run: |
+#          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
+#          cd ${{ env.SSH_ROOT }}
+#          if [ -f project-state.json ]; then
+#            THEME_NAME=$(grep -oP '"active-theme"\s*:\s*"\K[^"]+' project-state.json || echo "")
+#            if [ -n "$THEME_NAME" ]; then
+#              wp theme activate $THEME_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+#            else
+#              echo "No active theme specified."
+#            fi
+#          else
+#            echo "project-state.json not found."
+#          fi
+#          EOF
 
       - name: 🍺 Done
         run: |
