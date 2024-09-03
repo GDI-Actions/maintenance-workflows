@@ -158,26 +158,30 @@ jobs:
           ssh -T -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
           set -x
           cd ${{ env.SSH_ROOT }}
-      
+
           if [ -f "project-state.json" ]; then
             echo "project-state.json found, processing..."
-      
-            # Extract plugin names and statuses using grep and sed
-            PLUGIN_ENTRIES=\$(grep -oP '"name":\s*"\K[^"]+|(?<=status":\s*")\w+' project-state.json)
-      
+
+            # Extract plugin names
+            PLUGIN_NAMES=\$(grep -oP '"name":\s*"\K[^"]+' project-state.json)
+
+            # Extract plugin statuses
+            PLUGIN_STATUSES=\$(grep -oP '"status":\s*"\K[^"]+' project-state.json)
+
+            # Convert names and statuses into an array
             PLUGIN_ARRAY=()
-            while read -r line; do
-              PLUGIN_ARRAY+=("\$line")
-            done <<< "\$PLUGIN_ENTRIES"
-          
+            while read -r name && read -r status <&3; do
+              PLUGIN_ARRAY+=("\$name" "\$status")
+            done <<< "\$PLUGIN_NAMES" 3<<< "\$PLUGIN_STATUSES"
+
             # Debug output to check the contents of the PLUGIN_ARRAY
             echo "PLUGIN_ARRAY: \${PLUGIN_ARRAY[@]}"
-          
+
             # Loop through the array and process plugins
             for ((i=0; i<\${#PLUGIN_ARRAY[@]}; i+=2)); do
               PLUGIN_NAME="\${PLUGIN_ARRAY[i]}"
               PLUGIN_STATUS="\${PLUGIN_ARRAY[i+1]}"
-          
+
               if [ -n "\$PLUGIN_NAME" ] && [ -n "\$PLUGIN_STATUS" ]; then
                 if [ "\$PLUGIN_STATUS" = "active" ]; then
                   echo "Activating \$PLUGIN_NAME"
@@ -193,8 +197,9 @@ jobs:
             exit 1
           fi
           EOF
+      
 
-#      - name: 🎨 Activate Theme
+      #      - name: 🎨 Activate Theme
 #        continue-on-error: true
 #        run: |
 #          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << EOF
