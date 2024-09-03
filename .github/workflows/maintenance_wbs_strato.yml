@@ -99,10 +99,10 @@ jobs:
         run: |
           printf "%s" "${{ env.ENVIRONMENT }}" > .env
 
-      - name: 🐘 Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ inputs.php_version }}
+#      - name: 🐘 Set up PHP
+#        uses: shivammathur/setup-php@v2
+#        with:
+#          php-version: ${{ inputs.php_version }}
 
 #      - name: 🎲 Install composer dependency
 #        run: composer install
