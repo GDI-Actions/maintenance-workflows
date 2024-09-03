@@ -158,28 +158,30 @@ jobs:
           ssh -T -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
           set -x
           cd ${{ env.SSH_ROOT }}
-
+      
           if [ -f "project-state.json" ]; then
-            # Read the JSON file and extract plugin names and statuses
-            PLUGIN_ENTRIES=$(grep -E '"name":|"status":' project-state.json | sed 's/[",:]//g' | awk '{print $2}')
-          
+            echo "project-state.json found, processing..."
+      
+            # Extract plugin names and statuses with grep and sed
+            PLUGIN_ENTRIES=\$(grep -oP '"name":.*?[^\\]",|"status":.*?[^\\]"' project-state.json | sed -e 's/"name"://g' -e 's/"status"://g' -e 's/[", ]//g')
+      
             PLUGIN_ARRAY=()
             while read -r line; do
-              PLUGIN_ARRAY+=("$line")
-            done <<< "$PLUGIN_ENTRIES"
+              PLUGIN_ARRAY+=("\$line")
+            done <<< "\$PLUGIN_ENTRIES"
           
             # Loop through the array and process plugins
-            for ((i=0; i<${#PLUGIN_ARRAY[@]}; i+=2)); do
-              PLUGIN_NAME="${PLUGIN_ARRAY[i]}"
-              PLUGIN_STATUS="${PLUGIN_ARRAY[i+1]}"
+            for ((i=0; i<\${#PLUGIN_ARRAY[@]}; i+=2)); do
+              PLUGIN_NAME="\${PLUGIN_ARRAY[i]}"
+              PLUGIN_STATUS="\${PLUGIN_ARRAY[i+1]}"
           
-              if [ -n "$PLUGIN_NAME" ] && [ -n "$PLUGIN_STATUS" ]; then
-                if [ "$PLUGIN_STATUS" = "active" ]; then
-                  echo "Activating $PLUGIN_NAME"
-                  ddev wp plugin activate "$PLUGIN_NAME" || true
-                elif [ "$PLUGIN_STATUS" = "inactive" ]; then
-                  echo "Deactivating $PLUGIN_NAME"
-                  ddev wp plugin deactivate "$PLUGIN_NAME" || true
+              if [ -n "\$PLUGIN_NAME" ] && [ -n "\$PLUGIN_STATUS" ]; then
+                if [ "\$PLUGIN_STATUS" = "active" ]; then
+                  echo "Activating \$PLUGIN_NAME"
+                  ddev wp plugin activate "\$PLUGIN_NAME" || echo "Failed to activate \$PLUGIN_NAME"
+                elif [ "\$PLUGIN_STATUS" = "inactive" ]; then
+                  echo "Deactivating \$PLUGIN_NAME"
+                  ddev wp plugin deactivate "\$PLUGIN_NAME" || echo "Failed to deactivate \$PLUGIN_NAME"
                 fi
               fi
             done
