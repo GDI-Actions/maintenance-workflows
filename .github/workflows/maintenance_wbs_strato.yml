@@ -157,32 +157,35 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa "${{ secrets.ssh_user }}@${{ secrets.ssh_host }}" << EOF
           cd ${{ env.SSH_ROOT }}
-          mkdir test
-          EOF
-#          if [ -f project-state.json ]; then
-#            # Read the project-state.json file line by line
-#            while IFS= read -r line; do
-#              # Extract plugin name
-#              if echo "\$line" | grep -q '"name"'; then
-#                PLUGIN_NAME=\$(echo "\$line" | awk -F'"' '{print \$4}')
-#              fi
-#
-#              # Extract plugin status
-#              if echo "\$line" | grep -q '"status"'; then
-#                PLUGIN_STATUS=\$(echo "\$line" | awk -F'"' '{print \$4}')
-#
-#                # Activate or deactivate plugin based on status
-#                if [ "\$PLUGIN_STATUS" = "active" ]; then
-#                  wp plugin activate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
-#                elif [ "\$PLUGIN_STATUS" = "inactive" ]; then
-#                  wp plugin deactivate "\$PLUGIN_NAME" --path=${{ inputs.wordpress_path }}
-#                fi
-#              fi
-#            done < project-state.json
-#          else
-#            echo "project-state.json file not found."
-#            exit 1
-#          fi
+
+          if [ -f "project-state.json" ]; then
+            # Read the JSON file and extract plugin names and statuses
+            PLUGIN_ENTRIES=$(grep -E '"name":|"status":' project-state.json | sed 's/[",:]//g' | awk '{print $2}')
+          
+            PLUGIN_ARRAY=()
+            while read -r line; do
+              PLUGIN_ARRAY+=("$line")
+            done <<< "$PLUGIN_ENTRIES"
+          
+            # Loop through the array and process plugins
+            for ((i=0; i<${#PLUGIN_ARRAY[@]}; i+=2)); do
+              PLUGIN_NAME="${PLUGIN_ARRAY[i]}"
+              PLUGIN_STATUS="${PLUGIN_ARRAY[i+1]}"
+          
+              if [ -n "$PLUGIN_NAME" ] && [ -n "$PLUGIN_STATUS" ]; then
+                if [ "$PLUGIN_STATUS" = "active" ]; then
+                  echo "Activating $PLUGIN_NAME"
+                  ddev wp plugin activate "$PLUGIN_NAME" || true
+                elif [ "$PLUGIN_STATUS" = "inactive" ]; then
+                  echo "Deactivating $PLUGIN_NAME"
+                  ddev wp plugin deactivate "$PLUGIN_NAME" || true
+                fi
+              fi
+            done
+          else
+            echo "project-state.json file not found."
+            exit 1
+          fi
 #          EOF
 
 #      - name: 🎨 Activate Theme
