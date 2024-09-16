@@ -1,0 +1,161 @@
+name: ⛳ Deploy & Maintenance
+
+on:
+  workflow_call:
+    inputs:
+      php_version:
+        required: true
+        type: string
+        default: "8.1"
+      wordpress_path:
+        required: true
+        type: string
+    secrets:
+      ssh_root_live:
+        required: true
+      ssh_root_staging:
+        required: true
+      env_live:
+        required: true
+      env_staging:
+        required: true
+      ssh_host:
+        required: true
+      ssh_user:
+        required: true
+      ssh_private_key:
+        required: true
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚾ Set environment variables based on branch
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "SSH_ROOT=${{ secrets.ssh_root_live }}" >> $GITHUB_ENV
+            printf "ENVIRONMENT<<EOF\n%s\nEOF\n" "${{ secrets.env_live }}" >> $GITHUB_ENV
+          elif [ "${{ github.ref_name }}" = "staging" ]; then
+            echo "SSH_ROOT=${{ secrets.ssh_root_staging }}" >> $GITHUB_ENV
+            printf "ENVIRONMENT<<EOF\n%s\nEOF\n" "${{ secrets.env_staging }}" >> $GITHUB_ENV
+          else
+            echo "This branch is not configured for deployment."
+            exit 1
+          fi
+
+      - name: 🔬 Validate Required Secrets
+        run: |
+          if [ -z "${{ secrets.ssh_host }}" ]; then
+            echo "Missing SSH_HOST secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ssh_user }}" ]; then
+            echo "Missing SSH_USER secret"
+            exit 1
+          fi
+          if [ -z "${{ env.SSH_ROOT }}" ]; then
+            echo "Missing SSH_ROOT secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ssh_private_key }}" ]; then
+            echo "Missing SSH_PRIVATE_KEY secret"
+            exit 1
+          fi
+          if [ -z "${{ env.ENVIRONMENT }}" ]; then
+            echo "Missing ENVIRONMENT secret"
+            exit 1
+          fi
+
+      - name: 🌍 Verify .rsync-include file
+        run: |
+          if [ ! -f ".rsync-include" ]; then
+            echo ".rsync-include file does not exist."
+            exit 1
+          fi
+
+      - name: 📝 Create Production environment
+        run: |
+          printf "%s" "${{ env.ENVIRONMENT }}" > .env
+
+      - name: 🐘 Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php_version }}
+
+      - name: 🎲 Install composer dependency
+        run: composer install
+
+      - name: 🔭 Install SSH and rsync
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ssh rsync
+
+      - name: 👀 Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ssh_private_key }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
+
+      - name: 💎 Checking rsync execution before upload
+        run: |
+          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
+          rsync_exit_code=$?
+
+          echo "$rsync_output"
+
+          if [ $rsync_exit_code -ne 0 ]; then
+          echo "Error: Rsync encountered an error during the dry run."
+          exit 1
+          fi
+
+      - name: 🌊 Upload files with rsync
+        run: |
+          rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
+
+      - name: ⚙️ Activate/Deactivate Plugins
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
+          PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
+          if [ -f "$PROJECT_STATE_JSON" ]; then
+            for row in $(jq -r '.plugins[] | @base64' $PROJECT_STATE_JSON); do
+              _jq() {
+                echo ${row} | base64 --decode | jq -r ${1}
+              }
+              PLUGIN_NAME=$(_jq '.name')
+              PLUGIN_STATUS=$(_jq '.status')
+
+              if [ "$PLUGIN_STATUS" = "active" ]; then
+                wp plugin activate $PLUGIN_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+              elif [ "$PLUGIN_STATUS" = "inactive" ]; then
+                wp plugin deactivate $PLUGIN_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+              fi
+            done
+          else
+            echo "project-state.json file not found."
+            exit 1
+          fi
+          EOF
+
+      - name: 🎨 Activate Theme
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} << 'EOF'
+          PROJECT_STATE_JSON="${{ env.SSH_ROOT }}/project-state.json"
+          THEME_NAME=$(jq -r '.["active-theme"]' $PROJECT_STATE_JSON 2>/dev/null || echo "")
+          if [ -n "$THEME_NAME" ]; then
+            wp theme activate $THEME_NAME --path=${{ env.SSH_ROOT }}/${{ inputs.wordpress_path }}
+          else
+            echo "No active theme specified or project-state.json not found."
+          fi
+          EOF
+
+      - name: 🍺 Done
+        run: |
+          echo "Done"
