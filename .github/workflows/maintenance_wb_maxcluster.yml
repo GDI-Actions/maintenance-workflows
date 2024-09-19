@@ -108,7 +108,7 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           # This ensures the ~/.ssh/known_hosts file is created if it doesn't exist and has proper permissions.
 
-      - name: 🔑 Remove any existing entry for the host in known_hosts (ignore if not found)
+      - name: 🔑 Remove any existing entry for the host in known_hosts
         run: |
           if grep -q "${{ secrets.ssh_host }}" ~/.ssh/known_hosts; then
             ssh-keygen -R ${{ secrets.ssh_host }}
