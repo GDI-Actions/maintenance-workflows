@@ -100,7 +100,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.ssh_private_key }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts2
+          ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
 
       - name: Test SSH Connection with verbose output
         run: |
