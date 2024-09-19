@@ -106,26 +106,26 @@ jobs:
           mkdir -p ~/.ssh
           touch ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-          # This ensures the ~/.ssh/known_hosts file is created if it doesn't exist and has proper permissions.
 
-      - name: 🔑 Ensure known_hosts file exists and set proper permissions
-        run: |
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: 🔑 Temporarily disable strict checking to capture the host key
+      - name: ✈️ Save connection to known-hosts
         run: |
           ssh -o StrictHostKeyChecking=accept-new -T -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} true
-          # This will connect to the host and accept the key if it's new, without strict checking.
-      
-      - name: Test SSH Connection with verbose output
+
+      - name: 🎿 Test SSH Connection with verbose output
         run: |
           ssh -T -o StrictHostKeyChecking=yes -o BatchMode=yes -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}
 
       - name: 💎 Checking rsync execution before upload
         run: |
-          rsync -e 'ssh -o StrictHostKeyChecking=yes -T' -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
+          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
+          rsync_exit_code=$?
+
+          echo "$rsync_output"
+
+          if [ $rsync_exit_code -ne 0 ]; then
+          echo "Error: Rsync encountered an error during the dry run."
+          exit 1
+          fi
 
       - name: 🌊 Upload files with rsync
         run: |
