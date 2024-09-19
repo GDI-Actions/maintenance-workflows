@@ -87,8 +87,8 @@ jobs:
         with:
           php-version: ${{ inputs.php_version }}
 
-#      - name: 🎲 Install composer dependency
-#        run: composer install
+      - name: 🎲 Install composer dependency
+        run: composer install
 
       - name: 🔭 Install SSH and rsync
         run: |
