@@ -101,25 +101,23 @@ jobs:
           echo "${{ secrets.ssh_private_key }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: 🔑 Add server SSH key to known_hosts
+      - name: 🔑 Remove any existing entry for the host in known_hosts
+        run: |
+          ssh-keygen -R ${{ secrets.ssh_host }} || true
+          # This will remove any existing (possibly outdated) host key for the server from known_hosts.
+
+      - name: 🔑 Add server SSH key to known_hosts securely
         run: |
           ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
+          # Using ssh-keyscan to add the server's public key to known_hosts file.
 
       - name: Test SSH Connection with verbose output
         run: |
-          ssh -T -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} -o BatchMode=yes -v
+          ssh -T -o StrictHostKeyChecking=yes -o BatchMode=yes -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}
 
       - name: 💎 Checking rsync execution before upload
         run: |
-          rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
-          rsync_exit_code=$?
-
-          echo "$rsync_output"
-
-          if [ $rsync_exit_code -ne 0 ]; then
-          echo "Error: Rsync encountered an error during the dry run."
-          exit 1
-          fi
+          rsync -e 'ssh -o StrictHostKeyChecking=yes -T' -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
 
       - name: 🌊 Upload files with rsync
         run: |
