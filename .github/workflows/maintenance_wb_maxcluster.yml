@@ -103,7 +103,7 @@ jobs:
 
       - name: Test SSH Connection with verbose output
         run: |
-          ssh -o StrictHostKeyChecking=no -vvv -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} "echo SSH connection successful"
+          ssh -o StrictHostKeyChecking=no -vvv -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}
 
       - name: 💎 Checking rsync execution before upload
         run: |
