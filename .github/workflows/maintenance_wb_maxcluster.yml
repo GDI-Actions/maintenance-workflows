@@ -108,19 +108,17 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           # This ensures the ~/.ssh/known_hosts file is created if it doesn't exist and has proper permissions.
 
-      - name: 🔑 Remove any existing entry for the host in known_hosts
+      - name: 🔑 Ensure known_hosts file exists and set proper permissions
         run: |
-          if grep -q "${{ secrets.ssh_host }}" ~/.ssh/known_hosts; then
-            ssh-keygen -R ${{ secrets.ssh_host }}
-          fi
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: 🔑 Add ED25519 and other possible SSH keys to known_hosts
+      - name: 🔑 Temporarily disable strict checking to capture the host key
         run: |
-          ssh-keyscan -t ed25519 ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
-          ssh-keyscan -t rsa ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
-          ssh-keyscan -t ecdsa ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
-          # Fetch the host's ed25519, rsa, and ecdsa keys and append to known_hosts.
-
+          ssh -o StrictHostKeyChecking=accept-new -T -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} true
+          # This will connect to the host and accept the key if it's new, without strict checking.
+      
       - name: Test SSH Connection with verbose output
         run: |
           ssh -T -o StrictHostKeyChecking=yes -o BatchMode=yes -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}
