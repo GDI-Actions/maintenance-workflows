@@ -117,7 +117,6 @@ jobs:
 
       - name: 💎 Checking rsync execution before upload
         run: |
-#          rsync -e 'ssh -o StrictHostKeyChecking=yes -T' -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
           rsync -avz --no-times -n --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
       - name: 🌊 Upload files with rsync
         run: |
