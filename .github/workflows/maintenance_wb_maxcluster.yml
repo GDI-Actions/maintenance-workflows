@@ -121,7 +121,7 @@ jobs:
 
       - name: 🌊 Upload files with rsync
         run: |
-          rsync -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
+          rsync -e 'ssh -o StrictHostKeyChecking=yes -T' -avz --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
 
       - name: ⚙️ Activate/Deactivate Plugins
         continue-on-error: true
