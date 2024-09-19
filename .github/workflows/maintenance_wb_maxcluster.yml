@@ -100,11 +100,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.ssh_private_key }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts2
 
       - name: Test SSH Connection with verbose output
         run: |
-          ssh -v -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} "echo SSH connection successful"
+          ssh -vv -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} "echo SSH connection successful"
 
       - name: 💎 Checking rsync execution before upload
         run: |
