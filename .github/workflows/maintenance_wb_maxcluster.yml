@@ -102,6 +102,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.ssh_host }} >> ~/.ssh/known_hosts
 
+      - name: Test SSH Connection with verbose output
+        run: |
+          ssh -v -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} "echo SSH connection successful"
+
       - name: 💎 Checking rsync execution before upload
         run: |
           rsync_output=$(rsync -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }} 2>&1)
