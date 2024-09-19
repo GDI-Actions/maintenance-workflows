@@ -87,8 +87,8 @@ jobs:
         with:
           php-version: ${{ inputs.php_version }}
 
-      - name: 🎲 Install composer dependency
-        run: composer install
+#      - name: 🎲 Install composer dependency
+#        run: composer install
 
       - name: 🔭 Install SSH and rsync
         run: |
@@ -108,10 +108,11 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           # This ensures the ~/.ssh/known_hosts file is created if it doesn't exist and has proper permissions.
 
-      - name: 🔑 Remove any existing entry for the host in known_hosts
+      - name: 🔑 Remove any existing entry for the host in known_hosts (ignore if not found)
         run: |
-          ssh-keygen -R ${{ secrets.ssh_host }} || true
-          # This will remove any old host key for the server, if it exists.
+          if grep -q "${{ secrets.ssh_host }}" ~/.ssh/known_hosts; then
+            ssh-keygen -R ${{ secrets.ssh_host }}
+          fi
 
       - name: 🔑 Add server SSH key to known_hosts securely
         run: |
