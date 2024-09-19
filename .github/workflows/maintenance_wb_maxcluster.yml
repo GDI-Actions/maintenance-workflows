@@ -111,6 +111,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=accept-new -T -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} true
 
+      - name: 🔎 Check if remote folder exists
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} "[ -d ${{ env.SSH_ROOT }} ] && echo 'Directory exists' || echo 'Directory does not exist'"
+
       - name: 💎 Checking rsync execution before upload
         run: |
           rsync -e 'ssh -o StrictHostKeyChecking=yes -T' -avz -n --no-times --delete --include-from='.rsync-include' --exclude='*' ./ ${{ secrets.ssh_user }}@${{ secrets.ssh_host }}:${{ env.SSH_ROOT }}
