@@ -107,7 +107,7 @@ jobs:
 
       - name: Test SSH Connection with verbose output
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} -o BatchMode=yes -v
+          ssh -T -i ~/.ssh/id_rsa ${{ secrets.ssh_user }}@${{ secrets.ssh_host }} -o BatchMode=yes -v
 
       - name: 💎 Checking rsync execution before upload
         run: |
